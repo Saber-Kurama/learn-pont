@@ -2,9 +2,31 @@ import * as path from 'path';
 import * as fs from 'fs-extra';
 // import * as prettier from 'prettier'
 
+import * as ts from 'typescript';
 import { ResolveConfigOptions } from 'prettier';
 import { Manager } from './manage';
 import { OriginType } from './scripts';
+import { getTemplateByTemplateType } from './templates';
+
+const defaultTemplateCode = `
+import * as Pont from 'pont-engine';
+import { CodeGenerator, Interface } from "pont-engine";
+
+export class FileStructures extends Pont.FileStructures {
+}
+
+export default class MyGenerator extends CodeGenerator {
+}
+`;
+
+// 获取 接口 文档 数据 的默认方法
+const defaultFetchMethodCode = `
+import fetch from 'node-fetch';
+
+export default function (url: string): string {
+  return fetch(url).then(res => res.text())
+}
+`;
 
 // mocks 相关
 export class Mocks {
@@ -88,6 +110,22 @@ export class Config extends DataSourceConfig {
     super(config);
     this.origins = config.origins || [];
   }
+  // 执行 配置获取 远端  接口的方法
+  static getFetchMethodFromConfig(config: Config | DataSourceConfig) {
+    if (config.fetchMethodPath) {
+      // fetch 方法的路径
+      const fetchMethodPath = path.isAbsolute(config.fetchMethodPath)
+        ? config.fetchMethodPath
+        : path.join(process.cwd(), config.fetchMethodPath);
+      const moduleResult = getTemplate(fetchMethodPath, '', defaultFetchMethodCode);
+
+      if (moduleResult) {
+        return moduleResult.default;
+      }
+    }
+
+    return id => id;
+  }
   // 通过配置文件路径创建 config 实例
   static createFromConfigPath(configPath: string) {
     // 读取配置文件内容
@@ -129,6 +167,50 @@ export class Config extends DataSourceConfig {
   }
 }
 
+export function getTemplate(templatePath, templateType, defaultValue = defaultTemplateCode) {
+  // 模板文件是否存在
+  if (!fs.existsSync(templatePath + '.ts')) {
+    // 不存在 就写文件（用默认值）想要覆盖就应该有自己的文件
+    fs.writeFileSync(templatePath + '.ts', getTemplateByTemplateType(templateType) || defaultValue);
+  }
+  // 读取文件
+  const tsResult = fs.readFileSync(templatePath + '.ts', 'utf8');
+  // ts 编译
+  const jsResult = ts.transpileModule(tsResult, {
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2015,
+      module: ts.ModuleKind.CommonJS
+    }
+  });
+
+  const noCacheFix = (Math.random() + '').slice(2, 5);
+  const jsName = templatePath + noCacheFix + '.js';
+  let moduleResult;
+
+  try {
+    // 编译到js
+    fs.writeFileSync(jsName, jsResult.outputText, 'utf8');
+
+    // 用 node require 引用编译后的 js 代码
+    moduleResult = require(jsName);
+
+    // 删除该文件
+    fs.removeSync(jsName);
+  } catch (e) {
+    // 删除失败，则再删除
+    if (fs.existsSync(jsName)) {
+      fs.removeSync(jsName);
+    }
+
+    // 没有引用，报错
+    if (!moduleResult) {
+      throw new Error(e);
+    }
+  }
+
+  return moduleResult;
+}
+
 // 获取模板中的文件
 export function getTemplatesDirFile(fileName, filePath = 'templates/') {
   return fs.readFileSync(__dirname.substring(0, __dirname.lastIndexOf('lib')) + filePath + fileName, 'utf8');
@@ -168,8 +250,9 @@ export async function createManager(configFile = CONFIG_FILE) {
   if (!configPath) {
     return;
   }
-
+  // 根据配置文件 创建 配置 config
   const config = Config.createFromConfigPath(configPath);
+  // 创建一个 manager 管理对象
   const manager = new Manager(PROJECT_ROOT, config, path.dirname(configPath));
 
   await manager.ready();
