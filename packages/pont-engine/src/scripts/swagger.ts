@@ -1,7 +1,114 @@
 import * as _ from "lodash";
+import { BaseClass, Property, StandardDataSource, StandardDataType } from "../standard";
+import { compileTemplate, parseAst2StandardDataType } from "../compiler";
 import { OriginBaseReader } from "./base";
 
 // swaggwer
+
+enum SwaggerType {
+  integer = 'integer',
+  string = 'string',
+  file = 'string',
+  array = 'array',
+  number = 'number',
+  boolean = 'boolean',
+  object = 'object'
+}
+class Schema {
+  enum?: string[]; // 枚举值
+  type: SwaggerType;
+  additionalProperties?: Schema;
+  items: {
+    type?: SwaggerType;
+    $ref?: string;
+  };
+  $ref: string;
+  
+  // 解析 swagger 的 Schema to 标准datatype
+  static parseSwaggerSchema2StandardDataType(
+    schema: Schema,
+    defNames: string[],
+    classTemplateArgs = [] as StandardDataType[],
+    compileTemplateKeyword?: string
+  ) {
+    const { items, $ref, type, additionalProperties } = schema;
+    let typeName = schema.type as string;
+
+    // 如果是数组 
+    if (type === 'array') {
+      // @todo 这个 item 代表的是什么呢
+      let itemsType = _.get(items, 'type', '');
+      const itemsRef = _.get(items, '$ref', '');
+
+      if (itemsType) {
+        if (itemsType === 'integer') {
+          itemsType = 'number';
+        }
+
+        if (itemsType === 'file') {
+          itemsType = 'File';
+        }
+
+        let contentType = new StandardDataType([], itemsType, false, -1);
+
+        if (itemsType === 'array') {
+          contentType = new StandardDataType([new StandardDataType()], 'Array', false, -1);
+        }
+
+        return new StandardDataType([contentType], 'Array', false, -1);
+      }
+
+      if (itemsRef) {
+        const ast = compileTemplate(itemsRef, compileTemplateKeyword);
+        const contentType = parseAst2StandardDataType(ast, defNames, classTemplateArgs);
+
+        return new StandardDataType([contentType], 'Array', false, -1);
+      }
+    }
+
+    if (typeName === 'integer') {
+      typeName = 'number';
+    }
+
+    if (typeName === 'file') {
+      typeName = 'File';
+    }
+
+    // 枚举
+    if (schema.enum) {
+      // return StandardDataType.constructorWithEnum(parseSwaggerEnumType(schema.enum));
+    }
+
+    // 如果是ref 就在才编译
+    if ($ref) {
+      const ast = compileTemplate($ref, compileTemplateKeyword);
+
+      if (!ast) {
+        return new StandardDataType();
+      }
+
+      return parseAst2StandardDataType(ast, defNames, classTemplateArgs);
+    }
+
+    if (type === 'object') {
+      // object 并且有附加属性
+      if (additionalProperties) {
+        const typeArgs = [
+          new StandardDataType(),
+          Schema.parseSwaggerSchema2StandardDataType(
+            additionalProperties,
+            defNames,
+            classTemplateArgs,
+            compileTemplateKeyword
+          )
+        ];
+        return new StandardDataType(typeArgs, 'ObjectMap', false);
+      }
+    }
+
+    return new StandardDataType([], typeName, false);
+  }
+}
 class SwaggerInterface {
   consumes = [] as string[];
 
@@ -231,7 +338,10 @@ export function transformSwaggerData2Standard(
   usingOperationId = true,
   originName = ""
 ) {
+  // 定义
   const draftClasses = _.map(swagger.definitions, (def, defName) => {
+    // console.log('def', def)
+    console.log("defName", defName);
     const defNameAst = compileTemplate(defName);
 
     if (!defNameAst) {
@@ -244,10 +354,14 @@ export function transformSwaggerData2Standard(
       def,
     };
   });
+  console.log("draftClasses", draftClasses);
+  // names
   const defNames = draftClasses.map((clazz) => clazz.name);
 
   const baseClasses = draftClasses.map((clazz) => {
     const dataType = parseAst2StandardDataType(clazz.defNameAst, defNames, []);
+    console.log('dataType', dataType)
+    console.log('clazz', clazz)
     const templateArgs = dataType.typeArgs;
     const { description, properties } = clazz.def;
     const requiredProps = clazz.def.required || [];
@@ -267,7 +381,7 @@ export function transformSwaggerData2Standard(
         defNames,
         templateArgs
       );
-
+      console.log('dataType', dataType)
       return new Property({
         dataType,
         name: propName,
@@ -276,6 +390,8 @@ export function transformSwaggerData2Standard(
       });
     });
 
+    console.log('props', props)
+
     return new BaseClass({
       description,
       name: clazz.name,
@@ -283,7 +399,8 @@ export function transformSwaggerData2Standard(
       templateArgs,
     });
   });
-
+console.log('baseClasses', baseClasses)
+  // 排序 重复的name的排序
   baseClasses.sort((pre, next) => {
     if (
       pre.name === next.name &&
@@ -304,7 +421,7 @@ export function transformSwaggerData2Standard(
 
   return new StandardDataSource({
     baseClasses: _.uniqBy(baseClasses, (base) => base.name),
-    mods: parseSwaggerMods(swagger, defNames, usingOperationId),
+    // mods: parseSwaggerMods(swagger, defNames, usingOperationId),
     name: originName,
   });
 }

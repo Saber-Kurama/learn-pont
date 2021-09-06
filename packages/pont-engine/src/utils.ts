@@ -254,7 +254,6 @@ export async function createManager(configFile = CONFIG_FILE) {
   const config = Config.createFromConfigPath(configPath);
   // 创建一个 manager 管理对象
   const manager = new Manager(PROJECT_ROOT, config, path.dirname(configPath));
-
   await manager.ready();
 
   return manager;

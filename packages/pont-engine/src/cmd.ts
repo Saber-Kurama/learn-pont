@@ -34,7 +34,7 @@ program.description("powerful api code generator");
       .command('generate')
       .description('生成代码')
       .action(() => {
-        // manager.regenerateFiles();
+        manager.regenerateFiles();
       });
     program.parse(process.argv);
   } catch (e) {

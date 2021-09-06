@@ -1,6 +1,7 @@
 import { StandardDataSource } from "../standard";
 import { DataSourceConfig, Config } from "../utils";
-
+import fetch from 'node-fetch';
+// const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 export class OriginBaseReader {
   constructor(protected config: DataSourceConfig, protected report: any) {}
 
@@ -19,7 +20,6 @@ export class OriginBaseReader {
       const fetchMethod = Config.getFetchMethodFromConfig(this.config);
       return fetchMethod(url);
     }
-
     return fetch(url).then((res) => res.text());
   }
 
@@ -28,7 +28,7 @@ export class OriginBaseReader {
     // 获取数据源
     this.report("获取远程数据中...");
     let swaggerJsonStr: string = await this.fetchMethod(this.config.originUrl);
-
+    console.log('swaggerJsonStr', swaggerJsonStr)
     const data = await JSON.parse(swaggerJsonStr);
     this.report("远程数据获取成功！");
 
@@ -51,8 +51,8 @@ export class OriginBaseReader {
       // 如果用户配置了数据的自定义转换方法、如接口过滤等
 
       // 对解析后的标准数据源进行校验
-
-      return data;
+      console.log('remoteDataSource', remoteDataSource)
+      return remoteDataSource;
     } catch (e) {
       throw new Error("读取远程接口数据失败！" + e.toString());
     }
