@@ -77,6 +77,7 @@ export class StandardDataType extends Contextable{
     this.templateIndex = index
   }
 
+  // 获取 def 的名称
   getDefName(originName) {
     let name = this.typeName;
 
@@ -87,6 +88,7 @@ export class StandardDataType extends Contextable{
     return name;
   }
 
+  // 获取 枚举类型
   getEnumType() {
     return this.enum.join(' | ') || 'string';
   }
@@ -124,6 +126,47 @@ export class StandardDataType extends Contextable{
 
     return name || 'any';
   }
+  
+  // 获取初始值
+  getInitialValue(usingDef = true) {
+    if (this.typeName === 'Array') {
+      return '[]';
+    }
+
+    if (this.isDefsType) {
+      const originName = this.getDsName();
+
+      if (!usingDef) {
+        return `new ${this.typeName}()`;
+      }
+
+      return `new ${this.getDefName(originName)}()`;
+    }
+
+    if (this.templateIndex > -1) {
+      return 'undefined';
+    }
+
+    if (this.typeName === 'string') {
+      return "''";
+    }
+
+    if (this.typeName === 'boolean') {
+      return 'false';
+    }
+
+    if (this.enum && this.enum.length) {
+      const str = this.enum[0];
+
+      if (typeof str === 'string') {
+        return `${str}`;
+      }
+
+      return str + '';
+    }
+
+    return 'undefined';
+  }
 }
 
 // 属性 声明的生成
@@ -143,6 +186,7 @@ export class Property extends Contextable {
     }
   }
 
+  // 属性代码
   toPropertyCode(surrounding = Surrounding.typeScript, hasRequired = false, optional = false) {
     let optionalSignal = hasRequired && optional ? '?' : '';
 
@@ -163,6 +207,29 @@ export class Property extends Contextable {
     return `
       /** ${this.description || this.name} */
       ${name}${fieldTypeDeclaration};`;
+  }
+
+  // 具有初始值的 属性代码
+  toPropertyCodeWithInitValue(baseName = '') {
+    let typeWithValue = `= ${this.dataType.getInitialValue(false)}`;
+
+    if (!this.dataType.getInitialValue(false)) {
+      typeWithValue = `: ${this.dataType.generateCode(this.getDsName())}`;
+    }
+
+    if (this.dataType.typeName === baseName) {
+      typeWithValue = `= {}`;
+    }
+
+    let name = this.name;
+    if (!name.match(/^[a-zA-Z_$][a-zA-Z0-9_$]*$/)) {
+      name = `'${name}'`;
+    }
+
+    return `
+      /** ${this.description || this.name} */
+      ${name} ${typeWithValue}
+      `;
   }
 }
 

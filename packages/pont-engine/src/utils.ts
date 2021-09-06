@@ -1,9 +1,10 @@
 import * as path from 'path';
 import * as fs from 'fs-extra';
-// import * as prettier from 'prettier'
+import * as prettier from 'prettier'
 
 import * as ts from 'typescript';
 import { ResolveConfigOptions } from 'prettier';
+import { error } from './debugLog';
 import { Manager } from './manage';
 import { OriginType } from './scripts';
 import { getTemplateByTemplateType } from './templates';
@@ -167,6 +168,21 @@ export class Config extends DataSourceConfig {
   }
 }
 
+// 格式化 代码
+export function format(fileContent: string, prettierOpts = {}) {
+  try {
+    return prettier.format(fileContent, {
+      parser: 'typescript',
+      trailingComma: 'all',
+      singleQuote: true,
+      ...prettierOpts
+    });
+  } catch (e) {
+    error(`代码格式化报错！${e.toString()}\n代码为：${fileContent}`);
+    return fileContent;
+  }
+}
+
 export function getTemplate(templatePath, templateType, defaultValue = defaultTemplateCode) {
   // 模板文件是否存在
   if (!fs.existsSync(templatePath + '.ts')) {
@@ -258,6 +274,18 @@ export async function createManager(configFile = CONFIG_FILE) {
 
   return manager;
 }
+
+/** 获取文件名名称 */
+export function getFileName(fileName: string, surrounding: string) {
+  const isInvalidSurrounding = Surrounding[surrounding];
+
+  if (isInvalidSurrounding) {
+    return `${fileName}.${SurroundingFileName[isInvalidSurrounding]}`;
+  }
+
+  return `${fileName}.ts`;
+}
+
 /** 检测是否是合法url */
 export function judgeIsVaildUrl(url: string) {
   return /^(http|https):.*?$/.test(url);
