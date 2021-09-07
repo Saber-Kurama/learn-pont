@@ -40,13 +40,11 @@ export class Manager {
   }
 
   async ready() {
-    console.log("????");
     if (this.existsLocal()) {
       // await this.readLocalDataSource();
       // await this.initRemoteDataSource();
     } else {
       // 不存在的情况
-      console.log("????aaaa");
       const promises = this.allConfigs.map((config) => {
         return this.readRemoteDataSource(config);
       });
@@ -66,7 +64,7 @@ export class Manager {
     );
   }
 
-  // 远端源
+  // 从远端源来读取
   async readRemoteDataSource(config = this.currConfig) {
     // 项目根 就是项目的名
     const projName = this.projectRoot;
@@ -89,7 +87,8 @@ export class Manager {
     //     return remoteDataSource;
     //   }
     // }
-
+   
+    // 读取 json
     const remoteDataSource = await readRemoteDataSource(config, this.report);
     this.remoteDataSource = remoteDataSource;
 
@@ -104,12 +103,8 @@ export class Manager {
 
   // 派遣 递归 执行文件方法
   dispatch(files: {}) {
-    console.log('files--di', files)
     return _.mapValues(files, (value: Function | {}) => {
-      console.log('value', value.toString())
-      console.log('value', typeof value)
       if (typeof value === "function") {
-        console.log('???')
         
         return value();
       }
@@ -138,21 +133,20 @@ export class Manager {
   }
 
   async regenerateFiles() {
-    console.log("><>????");
     const files = this.getGeneratedFiles();
-    console.log("files", files);
     await this.fileManager.regenerate(files);
   }
 
   setFilesManager() {
     this.report("文件生成器创建中...");
+    // 生成 template的文件
     const { default: Generator, FileStructures: MyFileStructures } =
       getTemplate(this.currConfig.templatePath, this.currConfig.templateType);
 
     // 所有的本地数据源 创建 generators
     const generators = this.allLocalDataSources.map((dataSource) => {
       const config = this.getConfigByDataSourceName(dataSource.name);
-      const generator: CodeGenerator = new CodeGenerator(
+      const generator: CodeGenerator = new Generator(
         this.currConfig.surrounding,
         config?.outDir
       );

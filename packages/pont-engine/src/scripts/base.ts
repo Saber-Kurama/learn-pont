@@ -38,6 +38,7 @@ export class OriginBaseReader {
   /** 获取接口数据，解析并返回 */
   async fetchRemoteData(): Promise<StandardDataSource> {
     try {
+      // 获取远端数据
       const data = await this.fetchData();
 
       // 将数据源转换为标准数据源格式
@@ -51,6 +52,7 @@ export class OriginBaseReader {
       // 如果用户配置了数据的自定义转换方法、如接口过滤等
 
       // 对解析后的标准数据源进行校验
+
       console.log('remoteDataSource', remoteDataSource)
       return remoteDataSource;
     } catch (e) {

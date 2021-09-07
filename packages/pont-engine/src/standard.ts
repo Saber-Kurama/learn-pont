@@ -49,7 +49,19 @@ class Contextable {
   }
 }
 
+
 // 标准数据类型
+/**
+ * 数据类型
+ * {
+ *  typeArgs: StandardDataType, // 参数的类型
+ *  typeName: ，// 数据类型 
+ *  isDefsType // 是否是defs
+ *  templateIndex: -1; 指向第几个模板  指向类的第几个模板，-1 表示没有 
+ *  compileTemplateKeyword, 编译模板的 关键字 ？？
+ *  generateCode: function, // 生成代码的函数 
+ * }
+ */
 export class StandardDataType extends Contextable{
   enum: Array<string | number> = [];
 
@@ -71,6 +83,7 @@ export class StandardDataType extends Contextable{
   setTemplateIndex(classTemplateArgs: StandardDataType[]) {
     // 根据 模板生成代码
     const codes = classTemplateArgs.map(arg => arg.generateCode());
+    // 查看当前代码 在 codes 中的位置
     const index = codes.indexOf(this.generateCode());
     // 针对参数的处理
     this.typeArgs.forEach(arg => arg.setTemplateIndex(classTemplateArgs));

@@ -7,7 +7,9 @@ export enum OriginType {
   SwaggerV1 = 'SwaggerV1'
 }
 
+// 读取 远端源
 export async function readRemoteDataSource(config: DataSourceConfig, report: any) {
+  // 通过不同的swagger的版本 做不同的处
   switch (config.originType) {
     case OriginType.SwaggerV3: {
       // return new SwaggerV3Reader(config, report).fetchRemoteData();

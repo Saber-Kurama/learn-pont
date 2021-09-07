@@ -104,8 +104,8 @@ export class Config extends DataSourceConfig {
     fetchMethodPath?: string;
     outDir?: string
   }>;
-  transformPath: string;
-  fetchMethodPath: string;
+  transformPath: string; 
+  fetchMethodPath: string; // 用来更改获取 api json 文档的方法
 
   constructor(config: Config){
     super(config);
@@ -127,7 +127,7 @@ export class Config extends DataSourceConfig {
 
     return id => id;
   }
-  // 通过配置文件路径创建 config 实例
+  // 通过配置文件路径创建 config 实例 单例模式
   static createFromConfigPath(configPath: string) {
     // 读取配置文件内容
     const content = fs.readFileSync(configPath, 'utf8');

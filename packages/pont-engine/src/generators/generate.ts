@@ -235,6 +235,9 @@ export class CodeGenerator {
         [key in Key]: Value;
       }
 
+      ${this.getCommonDeclaration()}
+
+      ${this.getBaseClassesInDeclaration()}
       
     `;
   }
