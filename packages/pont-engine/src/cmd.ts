@@ -18,11 +18,6 @@ program.description("powerful api code generator");
 (async () => {
   try {
     const manager = await createManager();
-    // program.option("-d, --debug", "output extra debugging")
-    //        .action((name, options, command) => {
-    //         console.log('name', name)
-    //         console.log('options', options.debug)
-    //        });
     program
       .command("start")
       .description("pont配置文件生成")
@@ -34,7 +29,7 @@ program.description("powerful api code generator");
       .command('generate')
       .description('生成代码')
       .action(() => {
-        manager.regenerateFiles();
+        // manager.regenerateFiles();
       });
     program.parse(process.argv);
   } catch (e) {

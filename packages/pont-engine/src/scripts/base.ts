@@ -47,11 +47,13 @@ export class OriginBaseReader {
         this.config.usingOperationId, // 是否使用操作id
         this.config.name
       );
-      this.report("远程数据解析完毕!");
+      
 
       // 如果用户配置了数据的自定义转换方法、如接口过滤等
 
       // 对解析后的标准数据源进行校验
+      this.report("远程数据解析完毕!");
+      this.report('远程对象创建完毕！');
 
       console.log('remoteDataSource', remoteDataSource)
       return remoteDataSource;

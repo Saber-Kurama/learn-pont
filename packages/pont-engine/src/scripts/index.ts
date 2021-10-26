@@ -1,6 +1,8 @@
 import { SwaggerV2Reader } from "./swagger";
 import { DataSourceConfig } from "../utils";
 
+// 支持的 Swagger 类型 
+// TODO: 后续添加支持yapi
 export enum OriginType {
   SwaggerV3 = 'SwaggerV3',
   SwaggerV2 = 'SwaggerV2',
@@ -15,9 +17,11 @@ export async function readRemoteDataSource(config: DataSourceConfig, report: any
       // return new SwaggerV3Reader(config, report).fetchRemoteData();
     }
     case OriginType.SwaggerV2: {
-      return new SwaggerV2Reader(config, report).fetchRemoteData();
+      return new SwaggerV2Reader(config, report)
+      .fetchRemoteData();
     }
     default:
-      return new SwaggerV2Reader(config, report).fetchRemoteData();
+      return new SwaggerV2Reader(config, report)
+      // .fetchRemoteData();
   }
 }

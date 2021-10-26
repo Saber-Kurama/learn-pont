@@ -5,7 +5,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import { info as debugInfo, error } from "./debugLog";
 import { readRemoteDataSource } from "./scripts";
-import { DsManager } from "./DsManager";
+// import { DsManager } from "./DsManager";
 
 import {
   CodeGenerator,
@@ -45,14 +45,17 @@ export class Manager {
       // await this.initRemoteDataSource();
     } else {
       // 不存在的情况
+      console.log('不存在的情况')
       const promises = this.allConfigs.map((config) => {
         return this.readRemoteDataSource(config);
       });
+      // @ts-ignore
       this.allLocalDataSources = await Promise.all(promises);
+      console.log('allLocalDataSources', this.allLocalDataSources)
       this.currLocalDataSource = this.allLocalDataSources[0];
       this.remoteDataSource = this.currLocalDataSource;
 
-      // await this.regenerateFiles();
+      await this.regenerateFiles();
     }
   }
 
@@ -90,6 +93,7 @@ export class Manager {
    
     // 读取 json
     const remoteDataSource = await readRemoteDataSource(config, this.report);
+    // @ts-ignore
     this.remoteDataSource = remoteDataSource;
 
     // const { modDiffs, boDiffs } = diffDses(oldRemoteSource, this.remoteDataSource);
@@ -105,7 +109,7 @@ export class Manager {
   dispatch(files: {}) {
     return _.mapValues(files, (value: Function | {}) => {
       if (typeof value === "function") {
-        
+       console.log('value', value.toString()) 
         return value();
       }
 
@@ -132,11 +136,14 @@ export class Manager {
     }
   }
 
+  // 生成文件
   async regenerateFiles() {
     const files = this.getGeneratedFiles();
-    await this.fileManager.regenerate(files);
+    console.log('files', files)
+    // await this.fileManager.regenerate(files);
   }
 
+  // 文件生成器
   setFilesManager() {
     this.report("文件生成器创建中...");
     // 生成 template的文件
@@ -150,15 +157,18 @@ export class Manager {
         this.currConfig.surrounding,
         config?.outDir
       );
+      // 设置 datasource
       generator.setDataSource(dataSource);
       generator.usingMultipleOrigins = this.currConfig.usingMultipleOrigins;
-
+      
+      // getDataSourceCallback 方法, 用于暴露 pont 转换后的数据结构
       if (_.isFunction(generator.getDataSourceCallback)) {
         generator.getDataSourceCallback(dataSource);
       }
       return generator;
     });
-
+    // console.log('generators', generators)
+    // console.log('======', generators[0].getDeclaration.toString())
     // 文件结构
     let FileStructuresClazz = FileStructures as any;
 
@@ -168,10 +178,10 @@ export class Manager {
     this.fileManager = new FilesManager(
       new FileStructuresClazz(
         generators,
-        this.currConfig.usingMultipleOrigins,
-        this.currConfig.surrounding,
-        this.currConfig.outDir,
-        this.currConfig.templateType
+        // this.currConfig.usingMultipleOrigins,
+        // this.currConfig.surrounding,
+        // this.currConfig.outDir,
+        // this.currConfig.templateType
       ),
       this.currConfig.outDir
     );

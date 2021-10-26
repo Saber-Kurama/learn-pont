@@ -26,24 +26,24 @@ export class FileStructures {
 
   //  多源
   getMultipleOriginsFileStructures() {
-    const files = {};
+    // const files = {};
 
-    this.generators
-      .filter((generator) => generator.outDir === this.baseDir)
-      .forEach((generator) => {
-        const dsName = generator.dataSource.name;
-        const dsFiles = this.getOriginFileStructures(generator, true);
+    // this.generators
+    //   .filter((generator) => generator.outDir === this.baseDir)
+    //   .forEach((generator) => {
+    //     const dsName = generator.dataSource.name;
+    //     const dsFiles = this.getOriginFileStructures(generator, true);
 
-        files[dsName] = dsFiles;
-      });
+    //     files[dsName] = dsFiles;
+    //   });
 
-    return {
-      ...files,
-      [getFileName("index", this.surrounding)]:
-        this.getDataSourcesTs.bind(this),
-      "api.d.ts": this.getDataSourcesDeclarationTs.bind(this),
-      "api-lock.json": this.getLockContent.bind(this),
-    };
+    // return {
+    //   ...files,
+    //   [getFileName("index", this.surrounding)]:
+    //     this.getDataSourcesTs.bind(this),
+    //   "api.d.ts": this.getDataSourcesDeclarationTs.bind(this),
+    //   "api-lock.json": this.getLockContent.bind(this),
+    // };
   }
   // 生成 基类
   getBaseClassesInDeclaration(
@@ -72,7 +72,7 @@ export class FileStructures {
     const dataSource = generator.dataSource;
 
     const indexFileName = getFileName("index", this.surrounding);
-
+    console.log('dataSource.mods', dataSource.mods)
     // dataSource.mods.forEach(mod => {
     //   const currMod = {};
 
@@ -101,12 +101,12 @@ export class FileStructures {
       generator.hasContextBund = true;
     }
     console.log('generator', generator.getIndex)
-    console.log('generator', generator.getDeclaration)
+    console.log('generator', generator.getDeclaration.toString())
     const result = {
-      // [getFileName("baseClass", this.surrounding)]:
-      //   generator.getBaseClassesIndex.bind(generator),
+      [getFileName("baseClass", this.surrounding)]:
+        generator.getBaseClassesIndex.bind(generator),
       // mods: mods,
-      // [indexFileName]: generator.getIndex.bind(generator),
+      [indexFileName]: generator.getIndex.bind(generator),
       "api.d.ts": generator.getDeclaration.bind(generator),
     };
 
@@ -140,28 +140,28 @@ export class FileStructures {
     return result;
   }
 
-  // 获取 lock 的文件内容
-  getLockContent() {
-    if (this.generators) {
-      // generators 长度大于1且outDir不相同时，需要拆分生成代码
-      const hasMultipleOutDir = this.generators.some((generate) => {
-        return generate.outDir !== this.baseDir;
-      });
+  // // 获取 lock 的文件内容
+  // getLockContent() {
+  //   if (this.generators) {
+  //     // generators 长度大于1且outDir不相同时，需要拆分生成代码
+  //     const hasMultipleOutDir = this.generators.some((generate) => {
+  //       return generate.outDir !== this.baseDir;
+  //     });
 
-      let dataSources;
+  //     let dataSources;
 
-      // 只生成当前路径的api.lock
-      if (this.generators.length > 1 && hasMultipleOutDir) {
-        dataSources = this.generators
-          .filter((item) => item.outDir === this.baseDir)
-          .map((ge) => ge.dataSource);
-      } else {
-        dataSources = this.generators.map((ge) => ge.dataSource);
-      }
+  //     // 只生成当前路径的api.lock
+  //     if (this.generators.length > 1 && hasMultipleOutDir) {
+  //       dataSources = this.generators
+  //         .filter((item) => item.outDir === this.baseDir)
+  //         .map((ge) => ge.dataSource);
+  //     } else {
+  //       dataSources = this.generators.map((ge) => ge.dataSource);
+  //     }
 
-      return JSON.stringify(dataSources, null, 2);
-    }
-  }
+  //     return JSON.stringify(dataSources, null, 2);
+  //   }
+  // }
 }
 
 // 代码生成器的基础类
@@ -306,6 +306,7 @@ export class CodeGenerator {
   }
 }
 
+// 文件 管理类
 export class FilesManager {
   // todo: report 可以更改为单例，防止每个地方都注入。
   report = info;
@@ -314,101 +315,101 @@ export class FilesManager {
 
   constructor(public fileStructures: FileStructures, private baseDir: string) {}
 
-  /** 初始化清空路径 */
-  private initPath(path: string) {
-    if (!fs.existsSync(path)) {
-      fs.mkdirpSync(path);
-    }
-  }
+  // /** 初始化清空路径 */
+  // private initPath(path: string) {
+  //   if (!fs.existsSync(path)) {
+  //     fs.mkdirpSync(path);
+  //   }
+  // }
 
-  async regenerate(files: {}, oldFiles?: {}) {
-    // if (report) {
-    //   this.report = report;
-    // }
+  // async regenerate(files: {}, oldFiles?: {}) {
+  //   // if (report) {
+  //   //   this.report = report;
+  //   // }
 
-    this.initPath(this.baseDir);
-    this.created = true;
+  //   this.initPath(this.baseDir);
+  //   this.created = true;
 
-    if (oldFiles && Object.keys(oldFiles || {}).length) {
-      // const updateTask = this.diffFiles(files, oldFiles);
-      // if (updateTask.deletes && updateTask.deletes.length) {
-      //   this.report(`删除${updateTask.deletes.length}个文件及文件夹`);
-      //   await Promise.all(
-      //     updateTask.deletes.map((filePath) => {
-      //       fs.unlink(filePath);
-      //     })
-      //   );
-      // }
-      // if (updateTask.updateCnt) {
-      //   this.report(`更新${updateTask.updateCnt}个文件`);
-      //   console.time(`更新${updateTask.updateCnt}个文件`);
-      //   await this.updateFiles(updateTask.files);
-      //   console.timeEnd(`更新${updateTask.updateCnt}个文件`);
-      // }
-    } else {
-      await this.generateFiles(files);
-    }
-  }
+  //   if (oldFiles && Object.keys(oldFiles || {}).length) {
+  //     // const updateTask = this.diffFiles(files, oldFiles);
+  //     // if (updateTask.deletes && updateTask.deletes.length) {
+  //     //   this.report(`删除${updateTask.deletes.length}个文件及文件夹`);
+  //     //   await Promise.all(
+  //     //     updateTask.deletes.map((filePath) => {
+  //     //       fs.unlink(filePath);
+  //     //     })
+  //     //   );
+  //     // }
+  //     // if (updateTask.updateCnt) {
+  //     //   this.report(`更新${updateTask.updateCnt}个文件`);
+  //     //   console.time(`更新${updateTask.updateCnt}个文件`);
+  //     //   await this.updateFiles(updateTask.files);
+  //     //   console.timeEnd(`更新${updateTask.updateCnt}个文件`);
+  //     // }
+  //   } else {
+  //     await this.generateFiles(files);
+  //   }
+  // }
 
-  /** 区分lock文件是创建的还是人为更改的 */
-  created = false;
+  // /** 区分lock文件是创建的还是人为更改的 */
+  // created = false;
 
-  public formatFile(code: string, name = "") {
-    if (name && name.endsWith(".json")) {
-      return code;
-    }
+  // public formatFile(code: string, name = "") {
+  //   if (name && name.endsWith(".json")) {
+  //     return code;
+  //   }
 
-    return format(code, this.prettierConfig);
-  }
+  //   return format(code, this.prettierConfig);
+  // }
 
-  /** 根据 Codegenerator 配置生成目录和文件 */
-  async generateFiles(files: {}, dir = this.baseDir) {
-    const currFiles = await fs.readdir(dir);
+  // /** 根据 Codegenerator 配置生成目录和文件 */
+  // async generateFiles(files: {}, dir = this.baseDir) {
+  //   const currFiles = await fs.readdir(dir);
 
-    const promises = _.map(files, async (value: string | {}, name) => {
-      const currPath = `${dir}/${name}`;
+  //   const promises = _.map(files, async (value: string | {}, name) => {
+  //     const currPath = `${dir}/${name}`;
 
-      if (typeof value === "string") {
-        if (currFiles.includes(name)) {
-          const state = await fs.lstat(currPath);
+  //     if (typeof value === "string") {
+  //       if (currFiles.includes(name)) {
+  //         const state = await fs.lstat(currPath);
 
-          if (state.isDirectory()) {
-            await fs.unlink(currPath);
-            return fs.writeFile(currPath, this.formatFile(value, name));
-          } else {
-            const newValue = this.formatFile(value);
-            const currValue = await fs.readFile(currPath, "utf8");
+  //         if (state.isDirectory()) {
+  //           await fs.unlink(currPath);
+  //           return fs.writeFile(currPath, this.formatFile(value, name));
+  //         } else {
+  //           const newValue = this.formatFile(value);
+  //           const currValue = await fs.readFile(currPath, "utf8");
 
-            if (newValue !== currValue) {
-              return fs.writeFile(currPath, this.formatFile(value, name));
-            }
+  //           if (newValue !== currValue) {
+  //             return fs.writeFile(currPath, this.formatFile(value, name));
+  //           }
 
-            return;
-          }
-        } else {
-          return fs.writeFile(currPath, this.formatFile(value, name));
-        }
-      }
+  //           return;
+  //         }
+  //       } else {
+  //         return fs.writeFile(currPath, this.formatFile(value, name));
+  //       }
+  //     }
 
-      // 新路径为文件夹
-      if (currFiles.includes(name)) {
-        const state = await fs.lstat(currPath);
+  //     // 新路径为文件夹
+  //     if (currFiles.includes(name)) {
+  //       const state = await fs.lstat(currPath);
 
-        if (state.isDirectory()) {
-          return this.generateFiles(files[name], currPath);
-        } else {
-          await fs.unlink(currPath);
-          await fs.mkdir(currPath);
+  //       if (state.isDirectory()) {
+  //         return this.generateFiles(files[name], currPath);
+  //       } else {
+  //         await fs.unlink(currPath);
+  //         await fs.mkdir(currPath);
 
-          return this.generateFiles(files[name], currPath);
-        }
-      } else {
-        await fs.mkdir(currPath);
+  //         return this.generateFiles(files[name], currPath);
+  //       }
+  //     } else {
+  //       await fs.mkdir(currPath);
 
-        return this.generateFiles(files[name], currPath);
-      }
-    });
+  //       return this.generateFiles(files[name], currPath);
+  //     }
+  //   });
 
-    await Promise.all(promises);
-  }
+  //   await Promise.all(promises);
+  // }
 }

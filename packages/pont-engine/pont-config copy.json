@@ -5,6 +5,5 @@
   "mocks": {
     "enable": true
   },
-  "templateType": "fetch",
-  "templatePath": "./pontTemplate"
+  "templateType": "fetch"
 }

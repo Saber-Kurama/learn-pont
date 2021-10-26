@@ -1,5 +1,6 @@
 import * as _ from "lodash";
 import { BaseClass, Property, StandardDataSource, StandardDataType } from "../standard";
+import { toDashCase, getMaxSamePath, getIdentifierFromUrl, getIdentifierFromOperatorId } from '../utils'
 import { compileTemplate, parseAst2StandardDataType } from "../compiler";
 import { OriginBaseReader } from "./base";
 
@@ -176,105 +177,105 @@ class SwaggerInterface {
 
   operationId: string;
 
-  static transformSwaggerV3Interface2Standard(
-    inter: SwaggerInterface,
-    usingOperationId: boolean,
-    samePath: string,
-    defNames: string[] = []
-  ) {
-    let name = "";
-    const compileTemplateKeyword = "#/components/schemas/";
+  // static transformSwaggerV3Interface2Standard(
+  //   inter: SwaggerInterface,
+  //   usingOperationId: boolean,
+  //   samePath: string,
+  //   defNames: string[] = []
+  // ) {
+  //   let name = "";
+  //   const compileTemplateKeyword = "#/components/schemas/";
 
-    if (!usingOperationId || !inter.operationId) {
-      name = getIdentifierFromUrl(inter.path, inter.method, samePath);
-    } else {
-      name = getIdentifierFromOperatorId(inter.operationId);
-    }
+  //   if (!usingOperationId || !inter.operationId) {
+  //     name = getIdentifierFromUrl(inter.path, inter.method, samePath);
+  //   } else {
+  //     name = getIdentifierFromOperatorId(inter.operationId);
+  //   }
 
-    const responseSuccessContent = _.get(inter, "responses.200.content", {});
+  //   const responseSuccessContent = _.get(inter, "responses.200.content", {});
 
-    let responseSchema;
-    if (responseSuccessContent) {
-      const responseFormat = Object.keys(responseSuccessContent)[0];
+  //   let responseSchema;
+  //   if (responseSuccessContent) {
+  //     const responseFormat = Object.keys(responseSuccessContent)[0];
 
-      responseSchema = _.get(
-        responseSuccessContent,
-        `${responseFormat}.schema`,
-        {}
-      );
-    }
+  //     responseSchema = _.get(
+  //       responseSuccessContent,
+  //       `${responseFormat}.schema`,
+  //       {}
+  //     );
+  //   }
 
-    const response = Schema.parseSwaggerSchema2StandardDataType(
-      responseSchema,
-      defNames,
-      [],
-      compileTemplateKeyword
-    );
+  //   const response = Schema.parseSwaggerSchema2StandardDataType(
+  //     responseSchema,
+  //     defNames,
+  //     [],
+  //     compileTemplateKeyword
+  //   );
 
-    const parameters = (inter.parameters || []).map((param) => {
-      let paramSchema: Schema;
-      const {
-        description,
-        items,
-        name,
-        type,
-        schema = {} as Schema,
-        required,
-      } = param;
-      // 如果请求参数在body中的话，处理方式与response保持一致，因为他们本身的结构是一样的
-      if (param.in === "body") {
-        paramSchema = param.schema;
-      } else {
-        paramSchema = {
-          enum: param.enum,
-          items,
-          type,
-          $ref: _.get(schema, "$ref"),
-        };
-      }
+  //   const parameters = (inter.parameters || []).map((param) => {
+  //     let paramSchema: Schema;
+  //     const {
+  //       description,
+  //       items,
+  //       name,
+  //       type,
+  //       schema = {} as Schema,
+  //       required,
+  //     } = param;
+  //     // 如果请求参数在body中的话，处理方式与response保持一致，因为他们本身的结构是一样的
+  //     if (param.in === "body") {
+  //       paramSchema = param.schema;
+  //     } else {
+  //       paramSchema = {
+  //         enum: param.enum,
+  //         items,
+  //         type,
+  //         $ref: _.get(schema, "$ref"),
+  //       };
+  //     }
 
-      return new Property({
-        in: param.in,
-        description,
-        name: name.includes("/") ? name.split("/").join("") : name,
-        required,
-        dataType: Schema.parseSwaggerSchema2StandardDataType(
-          paramSchema,
-          defNames,
-          [],
-          compileTemplateKeyword
-        ),
-      });
-    });
+  //     return new Property({
+  //       in: param.in,
+  //       description,
+  //       name: name.includes("/") ? name.split("/").join("") : name,
+  //       required,
+  //       dataType: Schema.parseSwaggerSchema2StandardDataType(
+  //         paramSchema,
+  //         defNames,
+  //         [],
+  //         compileTemplateKeyword
+  //       ),
+  //     });
+  //   });
 
-    let interDesc = inter.summary;
+  //   let interDesc = inter.summary;
 
-    if (inter.description) {
-      if (interDesc) {
-        interDesc += "\n" + inter.description;
-      } else {
-        interDesc = inter.description;
-      }
-    }
+  //   if (inter.description) {
+  //     if (interDesc) {
+  //       interDesc += "\n" + inter.description;
+  //     } else {
+  //       interDesc = inter.description;
+  //     }
+  //   }
 
-    const standardInterface = new Interface({
-      consumes: inter.consumes,
-      description: interDesc,
-      name,
-      method: inter.method,
-      path: inter.path,
-      response,
-      /** 后端返回的参数可能重复 */
-      parameters: _.unionBy(parameters, "name"),
-    });
+  //   const standardInterface = new Interface({
+  //     consumes: inter.consumes,
+  //     description: interDesc,
+  //     name,
+  //     method: inter.method,
+  //     path: inter.path,
+  //     response,
+  //     /** 后端返回的参数可能重复 */
+  //     parameters: _.unionBy(parameters, "name"),
+  //   });
 
-    return standardInterface;
-  }
+  //   return standardInterface;
+  // }
 
   static transformSwaggerInterface2Standard(
-    inter: SwaggerInterface,
-    usingOperationId: boolean,
-    samePath: string,
+    inter: SwaggerInterface, // 接口
+    usingOperationId: boolean, // 是否使用操作符
+    samePath: string, // 最长相同路径
     defNames: string[] = [],
     compileTempateKeyword?: string
   ) {
@@ -286,70 +287,70 @@ class SwaggerInterface {
       name = getIdentifierFromOperatorId(inter.operationId);
     }
 
-    const responseSchema = _.get(inter, "responses.200.schema", {}) as Schema;
-    const response = Schema.parseSwaggerSchema2StandardDataType(
-      responseSchema,
-      defNames,
-      [],
-      compileTempateKeyword
-    );
+    // const responseSchema = _.get(inter, "responses.200.schema", {}) as Schema;
+    // const response = Schema.parseSwaggerSchema2StandardDataType(
+    //   responseSchema,
+    //   defNames,
+    //   [],
+    //   compileTempateKeyword
+    // );
 
-    const parameters = (inter.parameters || []).map((param) => {
-      let paramSchema: Schema;
-      const {
-        description,
-        items,
-        name,
-        type,
-        schema = {} as Schema,
-        required,
-      } = param;
-      // 如果请求参数在body中的话，处理方式与response保持一致，因为他们本身的结构是一样的
-      if (param.in === "body") {
-        paramSchema = param.schema;
-      } else {
-        paramSchema = {
-          enum: param.enum,
-          items,
-          type,
-          $ref: _.get(schema, "$ref"),
-        };
-      }
+    // const parameters = (inter.parameters || []).map((param) => {
+    //   let paramSchema: Schema;
+    //   const {
+    //     description,
+    //     items,
+    //     name,
+    //     type,
+    //     schema = {} as Schema,
+    //     required,
+    //   } = param;
+      // // 如果请求参数在body中的话，处理方式与response保持一致，因为他们本身的结构是一样的
+      // if (param.in === "body") {
+      //   paramSchema = param.schema;
+      // } else {
+      //   paramSchema = {
+      //     enum: param.enum,
+      //     items,
+      //     type,
+      //     $ref: _.get(schema, "$ref"),
+      //   };
+      // }
 
-      return new Property({
-        in: param.in,
-        description,
-        name: name.includes("/") ? name.split("/").join("") : name,
-        required,
-        dataType: Schema.parseSwaggerSchema2StandardDataType(
-          paramSchema,
-          defNames
-        ),
-      });
-    });
+  //     return new Property({
+  //       in: param.in,
+  //       description,
+  //       name: name.includes("/") ? name.split("/").join("") : name,
+  //       required,
+  //       dataType: Schema.parseSwaggerSchema2StandardDataType(
+  //         paramSchema,
+  //         defNames
+  //       ),
+  //     });
+  //   });
 
-    let interDesc = inter.summary;
+  //   let interDesc = inter.summary;
 
-    if (inter.description) {
-      if (interDesc) {
-        interDesc += "\n" + inter.description;
-      } else {
-        interDesc = inter.description;
-      }
-    }
+  //   if (inter.description) {
+  //     if (interDesc) {
+  //       interDesc += "\n" + inter.description;
+  //     } else {
+  //       interDesc = inter.description;
+  //     }
+  //   }
 
-    const standardInterface = new Interface({
-      consumes: inter.consumes,
-      description: interDesc,
-      name,
-      method: inter.method,
-      path: inter.path,
-      response,
-      /** 后端返回的参数可能重复 */
-      parameters: _.unionBy(parameters, "name"),
-    });
+  //   const standardInterface = new Interface({
+  //     consumes: inter.consumes,
+  //     description: interDesc,
+  //     name,
+  //     method: inter.method,
+  //     path: inter.path,
+  //     response,
+  //     /** 后端返回的参数可能重复 */
+  //     parameters: _.unionBy(parameters, "name"),
+  //   });
 
-    return standardInterface;
+  //   return standardInterface;
   }
 }
 
@@ -385,13 +386,128 @@ export class SwaggerDataSource {
   };
 }
 
+export function parseSwaggerMods(
+  swagger: SwaggerDataSource,
+  defNames: string[],
+  usingOperationId: boolean,
+  compileTempateKeyword?: string // 编译模板关键字
+) {
+  const allSwaggerInterfaces = [] as SwaggerInterface[];
+  _.forEach(swagger.paths, (methodInters, path) => {
+    const pathItemObject = _.cloneDeep(methodInters);
+    // 参数调整
+    if (Array.isArray(pathItemObject.parameters)) {
+      ['get', 'post', 'patch', 'delete', 'put'].forEach(method => {
+        if (pathItemObject[method]) {
+          pathItemObject[method].parameters = (pathItemObject[method].parameters || []).concat(
+            pathItemObject.parameters
+          );
+        }
+      });
+
+      delete pathItemObject.parameters;
+    }
+
+    // 内循环 method
+    _.forEach(pathItemObject as Omit<SwaggerPathItemObject, 'parameters'>, (inter, method) => {
+      inter.path = path;
+      inter.method = method;
+
+      if (!inter.tags) {
+        inter.tags = ['defaultModule'];
+      }
+
+      allSwaggerInterfaces.push(inter);
+    });
+  });
+
+  if (!swagger.tags) {
+    swagger.tags = [];
+  }
+
+  // 添加一个默认的 tag
+  swagger.tags.push({
+    name: 'defaultModule',
+    description: 'defaultModule'
+  });
+
+  // swagger 2.0 中 tags属性是可选的
+  const mods = swagger.tags
+    .map(tag => {
+      console.log('tag', tag)
+      // 包含当前 tag 中的modInterfaces
+      const modInterfaces = allSwaggerInterfaces.filter(inter => {
+        // swagger 3.0+ 中可能不存在 description 字段
+        if (tag.description === undefined || tag.description === null) {
+          tag.description = '';
+        }
+
+        return (
+          inter.tags.includes(tag.name) ||
+          inter.tags.includes(tag.name.toLowerCase()) ||
+          inter.tags.includes(tag.description.toLowerCase()) ||
+          inter.tags.includes(toDashCase(tag.description))
+        );
+      });
+
+      // 最长相同路径
+      const samePath = getMaxSamePath(modInterfaces.map(inter => inter.path.slice(1)));
+      console.log('samePath', samePath);
+      const standardInterfaces = modInterfaces.map(inter => {
+        return SwaggerInterface.transformSwaggerInterface2Standard(
+          inter,
+          usingOperationId,
+          samePath,
+          defNames,
+          compileTempateKeyword
+        );
+      });
+
+      // // 判断是否有重复的 name
+      // if (usingOperationId) {
+      //   const names = [] as string[];
+
+      //   standardInterfaces.forEach(inter => {
+      //     if (!names.includes(inter.name)) {
+      //       names.push(inter.name);
+      //     } else {
+      //       inter.name = getIdentifierFromUrl(inter.path, inter.method, samePath);
+      //     }
+      //   });
+      // }
+
+      // // 兼容某些项目把swagger tag的name和description弄反的情况
+      // if (hasChinese(tag.name)) {
+      //   // 当检测到name包含中文的时候，采用description
+      //   return new Mod({
+      //     description: tag.name,
+      //     interfaces: _.uniqBy(standardInterfaces, 'name'),
+      //     name: transformCamelCase(tag.description)
+      //   });
+      // } else {
+      //   return new Mod({
+      //     description: tag.description,
+      //     interfaces: _.uniqBy(standardInterfaces, 'name'),
+      //     name: transformCamelCase(tag.name)
+      //   });
+      // }
+    })
+    // .filter(mod => {
+    //   return mod.interfaces.length;
+    // });
+
+  // transformModsName(mods);
+
+  // return mods;
+}
+
 // swagger2 数据转换成 标准数据
 export function transformSwaggerData2Standard(
   swagger: SwaggerDataSource,
   usingOperationId = true,
   originName = ""
 ) {
-  // 定义
+  // 找到所有的定义的类
   const draftClasses = _.map(swagger.definitions, (def, defName) => {
     // console.log('def', def)
     console.log("defName", defName);
@@ -409,7 +525,7 @@ export function transformSwaggerData2Standard(
     };
   });
   console.log("draftClasses", draftClasses);
-  // names
+  // 所有类的名字
   const defNames = draftClasses.map((clazz) => clazz.name);
 
   // 生成 基本 类
@@ -438,7 +554,7 @@ export function transformSwaggerData2Standard(
         defNames,
         templateArgs  // 类型参数 是否 属性参数 中有一样的
       );
-      console.log('dataType', dataType)
+      // console.log('dataType', dataType)
       return new Property({
         dataType,
         name: propName,
@@ -447,7 +563,7 @@ export function transformSwaggerData2Standard(
       });
     });
 
-    console.log('props', props)
+    // console.log('props', props)
 
     return new BaseClass({
       description,
@@ -477,10 +593,9 @@ console.log('baseClasses', baseClasses)
 
     return next.name > pre.name ? 1 : -1;
   });
-
   return new StandardDataSource({
     baseClasses: _.uniqBy(baseClasses, (base) => base.name),
-    // mods: parseSwaggerMods(swagger, defNames, usingOperationId),
+    mods: parseSwaggerMods(swagger, defNames, usingOperationId),
     name: originName,
   });
 }

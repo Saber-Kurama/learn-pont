@@ -53,7 +53,9 @@ const promptList = [
 
 // 生成pont config
 export async function generatePontConfig() {
+  // 查看是否有 配置文件
   const configPath = await lookForFiles(process.cwd(), CONFIG_FILE);
+  // 如果有是否覆盖
   if (configPath) {
     const result = await inquirer.prompt({
       type: 'confirm',
