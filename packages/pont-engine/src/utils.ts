@@ -5,6 +5,7 @@ import * as fs from 'fs-extra';
 import * as ts from 'typescript';
 import { ResolveConfigOptions } from 'prettier';
 import { error } from './debugLog';
+import { Mod, StandardDataSource } from './standard';
 import { Manager } from './manage';
 import { OriginType } from './scripts';
 import { getTemplateByTemplateType } from './templates';
@@ -344,6 +345,66 @@ export function toDashCase(name: string) {
   }
 
   return dashName;
+}
+
+export function transformModsName(mods: Mod[]) {
+  // 检测所有接口是否存在接口名忽略大小写时重复，如果重复，以下划线命名
+  mods.forEach(mod => {
+    const currName = mod.name;
+    const sameMods = mods.filter(mod => mod.name.toLowerCase() === currName.toLowerCase());
+
+    if (sameMods.length > 1) {
+      mod.name = transformDashCase(mod.name);
+    }
+  });
+}
+
+function transformDashCase(name: string) {
+  return name.replace(/[A-Z]/g, ch => '_' + ch.toLowerCase());
+}
+
+// 驼峰
+export function transformCamelCase(name: string) {
+  let words = [] as string[];
+  let result = '';
+
+  if (name.includes('-')) {
+    words = name.split('-');
+  } else if (name.includes(' ')) {
+    words = name.split(' ');
+  } else {
+    if (typeof name === 'string') {
+      result = name;
+    } else {
+      throw new Error('mod name is not a string: ' + name);
+    }
+  }
+
+  if (words && words.length) {
+    result = words
+      .map(word => {
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join('');
+  }
+
+  result = result.charAt(0).toLowerCase() + result.slice(1);
+
+  if (result.endsWith('Controller')) {
+    result = result.slice(0, result.length - 'Controller'.length);
+  }
+
+  return result;
+}
+
+/** 正则检测是否包含中文名 */
+export function hasChinese(str: string) {
+  return (
+    str &&
+    str.match(
+      /[\u4E00-\u9FCC\u3400-\u4DB5\uFA0E\uFA0F\uFA11\uFA13\uFA14\uFA1F\uFA21\uFA23\uFA24\uff1a\uff0c\uFA27-\uFA29]|[\ud840-\ud868][\udc00-\udfff]|\ud869[\udc00-\uded6\udf00-\udfff]|[\ud86a-\ud86c][\udc00-\udfff]|\ud86d[\udc00-\udf34\udf40-\udfff]|\ud86e[\udc00-\udc1d]|[\uff01-\uff5e\u3000-\u3009\u2026]/
+    )
+  );
 }
 
 const PROJECT_ROOT = process.cwd();

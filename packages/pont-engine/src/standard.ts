@@ -65,6 +65,22 @@ class Contextable {
 export class StandardDataType extends Contextable{
   enum: Array<string | number> = [];
 
+  setEnum(enums: Array<string | number> = []) {
+    this.enum = enums.map(value => {
+      if (typeof value === 'string') {
+        if (!value.startsWith("'")) {
+          value = "'" + value;
+        }
+
+        if (!value.endsWith("'")) {
+          value = value + "'";
+        }
+      }
+
+      return value;
+    });
+  }
+
   typeProperties: Property[] = [];
 
   constructor(
@@ -77,6 +93,14 @@ export class StandardDataType extends Contextable{
     public compileTemplateKeyword = '#/definitions/'
   ) {
     super();
+  }
+
+  // 枚举值
+  static constructorWithEnum(enums: Array<string | number> = []) {
+    const dataType = new StandardDataType();
+    dataType.setEnum(enums);
+
+    return dataType;
   }
 
   // 设置模板索引
@@ -190,6 +214,8 @@ export class Property extends Contextable {
   name: string;
   required: boolean;
 
+  in: 'query' | 'body' | 'path' | 'formData' | 'header';
+
   constructor(prop: Partial<Property>) {
     super(prop);
 
@@ -248,7 +274,10 @@ export class Property extends Contextable {
 
 // 实例
 export class Interface extends Contextable {
-
+  consumes: string[];
+  constructor(inter: Partial<Interface>) {
+    super(inter);
+  }
 }
 
 // Mod

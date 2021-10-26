@@ -1,0 +1,89 @@
+{
+  "name": "vscode-pont",
+  "displayName": "pont",
+  "description": "",
+  "version": "1.0.12",
+  "publisher": "jasonHzq",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.24.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./out/extension",
+  "contributes": {
+    "jsonValidation": [
+      {
+        "fileMatch": "pont-config.json",
+        "url": "./configSchema.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "pont.findInterface",
+        "title": "find pont interface"
+      },
+      {
+        "command": "pont.jumpToMocks",
+        "title": "jump to mock position"
+      },
+      {
+        "command": "pont.visitMocks",
+        "title": "visit mocks interface"
+      },
+      {
+        "command": "pont.refreshMocks",
+        "title": "refresh mocks data"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "pont.findInterface",
+        "key": "cmd+ctrl+p",
+        "mac": "cmd+ctrl+p"
+      },
+      {
+        "command": "pont.refreshMocks",
+        "key": "cmd+ctrl+m",
+        "mac": "cmd+ctrl+m"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "group": "navigation",
+          "command": "pont.jumpToMocks"
+        },
+        {
+          "group": "navigation",
+          "command": "pont.visitMocks"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "rimraf ./out && tsc",
+    "watch": "tsc -watch -p ./",
+    "test": "npm run build && node ../../node_modules/vscode/bin/test"
+  },
+  "dependencies": {
+    "@types/fs-extra": "^5.1.0",
+    "fs-extra": "^7.0.1",
+    "mockjs": "^1.0.1-beta3",
+    "pont-engine": "1.0.12"
+  },
+  "devDependencies": {
+    "rimraf": "^3.0.2",
+    "vsce": "^1.50.0",
+    "vscode": "^1.1.18"
+  },
+  "icon": "logo.png",
+  "repository": {
+    "url": "git@github.com:alibaba/pont.git",
+    "type": "git"
+  }
+}
