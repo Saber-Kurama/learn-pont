@@ -117,7 +117,7 @@ class Schema {
 
     // 枚举
     if (schema.enum) {
-      // return StandardDataType.constructorWithEnum(parseSwaggerEnumType(schema.enum));
+      return StandardDataType.constructorWithEnum(parseSwaggerEnumType(schema.enum));
     }
 
     // 如果是ref 就在才编译
@@ -287,13 +287,13 @@ class SwaggerInterface {
       name = getIdentifierFromOperatorId(inter.operationId);
     }
 
-    // const responseSchema = _.get(inter, "responses.200.schema", {}) as Schema;
-    // const response = Schema.parseSwaggerSchema2StandardDataType(
-    //   responseSchema,
-    //   defNames,
-    //   [],
-    //   compileTempateKeyword
-    // );
+    const responseSchema = _.get(inter, "responses.200.schema", {}) as Schema;
+    const response = Schema.parseSwaggerSchema2StandardDataType(
+      responseSchema,
+      defNames,
+      [],
+      compileTempateKeyword
+    );
 
     // const parameters = (inter.parameters || []).map((param) => {
     //   let paramSchema: Schema;
